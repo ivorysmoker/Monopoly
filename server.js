@@ -139,10 +139,19 @@ updateNicknamesOnline();
 		socket.paschcounter = 0;
 		SpielStart = 0;
 		socket.SpielerRundenZahl = 0;
+		socket.WuerfelAnzahl = 1;
 socket.on('roll', function(){
 		if(SpielStart == 1){	
 			   if(socket.PlayerActive == 1){
+			   
+			   if(socket.WuerfelAnzahl > 0 ){
+				  socket.WuerfelAnzahl--;
+			   }else{
+				  socket.emit('ServerMessege', 'Wähle kaufen oder Nicht kaufen!' );
+				  return;
+			   }
 			   //wie viel hat der spieler gewürfelt?
+			   
 			   
 			  if(socket.inJail == 1 && socket.reroll !== 1) {
 			    socket.emit('ServerMessege', 'Kaution bezahlen oder versuchen, Pasch zu rollen?' );
@@ -158,6 +167,7 @@ socket.on('roll', function(){
 		
 		//Hat Player ein Pasch?
 		if(num1 === num2) {
+			socket.WuerfelAnzahl++;
 			socket.paschcounter = socket.paschcounter + 1;
 			console.log("Pasch! Next");
 			//console.log("pasch juhu darf nochma!"+socket.paschcounter);
@@ -277,32 +287,28 @@ socket.on('roll', function(){
 			// bei 2 SpielerAnzahl hinzufügen
 			if(socket.paschcounter == 0){
 			socket.PlayerActive = 0;
-
+			console.log(BenutzerReihenFolge);
 				if(BenutzerReihenFolge.indexOf(Spieler1) == -1){
 					OnlineUsers[Spieler1].PlayerActive = 1;
+					OnlineUsers[Spieler1].WuerfelAnzahl = 1;
 					var AktiverSpieler = Spieler1;
 					if(BenutzerReihenFolgeMax.length < 2){
 						BenutzerReihenFolgeMax.push(Spieler1);
 					}
 				}else if(BenutzerReihenFolge.indexOf(Spieler2) == -1){
 					OnlineUsers[Spieler2].PlayerActive = 1;
+					OnlineUsers[Spieler2].WuerfelAnzahl = 1;
 					var AktiverSpieler = Spieler2;
 					if(BenutzerReihenFolgeMax.length < 2){
 					BenutzerReihenFolgeMax.push(Spieler2);
-					}
-				}else if(BenutzerReihenFolge.indexOf(Spieler3) == -1){
-					OnlineUsers[Spieler3].PlayerActive = 1;
-					var AktiverSpieler = Spieler3;
-					if(BenutzerReihenFolgeMax.length < 2){
-					BenutzerReihenFolgeMax.push(Spieler3);
 					}
 				}
 			//Wenn Max Spiler Anzahl erreicht ist setze array zurück
 			var Umrechnung = BenutzerReihenFolge.length + 1; // was hatte das fürn grund xD
 			var AnzeigeBenutzer = BenutzerReihenFolgeMax.length;
-			
+			console.log(Umrechnung + "Umrechung");
 						
-			if(Umrechnung == SpielerAnzahl){
+			if(Umrechnung >= SpielerAnzahl){
 				delete BenutzerReihenFolge; // array ausgabe ist falsch
 				BenutzerReihenFolge = [];
 			}
@@ -323,6 +329,8 @@ socket.on('roll', function(){
 		}else{
 			if(socket.paschcounter == 0){
 		    NextPlayer(socket);
+			}else{
+				socket.WuerfelAnzahl++;
 			}
 		}
 	});
@@ -342,28 +350,24 @@ socket.on('roll', function(){
 			console.log(BenutzerReihenFolge.indexOf(Spieler1));
 				if(BenutzerReihenFolge.indexOf(Spieler1) == -1){
 					OnlineUsers[Spieler1].PlayerActive = 1;
+					OnlineUsers[Spieler1].WuerfelAnzahl = 1;
 					var AktiverSpieler = Spieler1;
 					if(BenutzerReihenFolgeMax.length < SpielerAnzahl){
 						BenutzerReihenFolgeMax.push(Spieler1);
 					}					
 				}else if(BenutzerReihenFolge.indexOf(Spieler2) == -1){
 					OnlineUsers[Spieler2].PlayerActive = 1;
+					OnlineUsers[Spieler2].WuerfelAnzahl = 1;
 					var AktiverSpieler = Spieler2;
 					if(BenutzerReihenFolgeMax.length < SpielerAnzahl){
 						BenutzerReihenFolgeMax.push(Spieler2);
-					}
-				}else if(BenutzerReihenFolge.indexOf(Spieler3) == -1){
-					OnlineUsers[Spieler3].PlayerActive = 1;
-					var AktiverSpieler = Spieler3;
-					if(BenutzerReihenFolgeMax.length < SpielerAnzahl){
-						BenutzerReihenFolgeMax.push(Spieler3);
 					}
 				}//erweitern falls mehr spieler dazu kommen, maybe noch for schleife
 			//Wenn Max Spiler Anzahl erreicht ist setze array zurück
 			var Umrechnung = BenutzerReihenFolge.length + 1;
 				console.log(Umrechnung + " Array Anzahl 1 or 2");
 				console.log(SpielerAnzahl + " SpielerAnzahl");
-			if(Umrechnung == SpielerAnzahl){
+			if(Umrechnung >= SpielerAnzahl){
 				delete BenutzerReihenFolge;
 				BenutzerReihenFolge = [];
 			}
@@ -434,7 +438,7 @@ socket.on('roll', function(){
 			NextPlayer(socket);
 			}
 			}else{
-				io.socket.emit('ServerMessege', 'Das '+NamenMap[FeldPosNumber]+' gehört dir schon!');
+				io.sockets.emit('ServerMessege', 'Das '+NamenMap[FeldPosNumber]+' gehört dir schon!');
 			}
 			}
 		}
