@@ -18,7 +18,7 @@ var express = require('express'),
 	//erreignise erstellen KistenKarten["Dies added 100 dollar"] etc. etc.
 	ErreignisKarten = [];
 	KistenKarten = [];
-	KostenMap = [00000, 60, 000, 60, 00, 200, 100, 000, 100, 120, 0, 140, 150, 140, 160, 200, 180, 000, 180, 200, 00000, 220, 0, 220, 240, 200, 260, 260, 150, 280, 0000, 300, 300, 000, 320, 200, 0, 350, 200, 400];
+	KostenMap = [5, 60, 3, 60, 1, 200, 100, 0, 100, 120, 6, 140, 150, 140, 160, 200, 180, 2, 180, 200, 4, 220, 0, 220, 240, 200, 260, 260, 150, 280, 3, 300, 300, 2, 320, 200, 0, 350, 1, 400];
 	NamenMap = ["Los", "Kiosk", "Gemeinschaftsfeld", "Reinigung", "Einkommensteuer", "Süd-Bahnhof", "Tabakladen", "Ereignisfeld", "Getränkemarkt", "Restaurant", "Knast", "Müll Deponie" , "Elektrizitätswerk" , "Tankstelle" , "Waschanlage", "West-Bahnhof", "Lidli", "Gemeinschaftsfeld", "Aldli", "Metrio", "Frei parken", "Theater", "Ereignisfeld", "Oper", "Museum", "Nord-Bahnhof", "Tennisplatz", "Spielehalle", "Wasserwerk" , "Fussballfeld", "Gehe ins Gefängnis", "Rathhausplatz", "Steueramt", "Gemeinschaftsfeld", "Zollamt" ,"Hauptbahnhof", "Ereignisfeld", "Gerichtsgebäude", "Monopoly Steuer", "Juwelier"];
 	GekaufeArtikelNummer = [];
 	GekaufeArtikelSpieler = [];
@@ -262,6 +262,14 @@ socket.on('roll', function(){
 		socket.emit('ServerMessege', 'Du kannst im Moment nichts kaufen!');
 		console.log(socket.KaufButton);
 	}else{
+		if(typeof GekaufeArtikelNummer[0] !== "undefined"){
+		for(x=0; x<GekaufeArtikelNummer.length; x++){
+			if(socket.PlayerPos == GekaufeArtikelNummer[x]){
+			socket.emit('ServerMessege', 'Dieses Feld wurde bereits gekauft!');
+			return;
+			}
+		}
+		}
 			//Sende an alle Player eine Kauf-Nachricht
 			io.sockets.emit('ServerMessege', 'Spieler '+socket.nickname+' hat soeben das Grundstück '+NamenMap[socket.PlayerPos]+' für '+ KostenMap[socket.PlayerPos] +' Dollar gekauft!');
 
@@ -381,29 +389,31 @@ socket.on('roll', function(){
 		socket.PlayerPos = FeldPosNumber;
 		if(GekaufeArtikelNummer.indexOf(FeldPosNumber) == -1){
 			//SpielerNachricht
-			if(KostenMap[FeldPosNumber] !== 0 || KostenMap[FeldPosNumber] !== 00 || KostenMap[FeldPosNumber] !== 000 || KostenMap[FeldPosNumber] !== 0000 || KostenMap[FeldPosNumber] !== 00000 || KostenMap[FeldPosNumber] !== 000000){
+			console.log(KostenMap[FeldPosNumber]+" KostenFeld");
+			if(KostenMap[FeldPosNumber] > 6){
 			socket.emit('ServerMessege', 'Willst du '+NamenMap[FeldPosNumber]+' für '+KostenMap[FeldPosNumber]+' Dollar kaufen?');
 			socket.KaufButton = 1;
 			}else{
+			socket.KaufButton = 0;
 			console.log('Erreignis Feld, Zahlungsfeld, oder Kisten Feld gefägnis, freiparken');
 				if(KostenMap[FeldPosNumber] == 0){
 					io.sockets.emit('ServerMessege', 'Ereignisfeld ausgelöst: ');
-				}else if(KostenMap[FeldPosNumber] == 00){
+				}else if(KostenMap[FeldPosNumber] == 1){
 					io.sockets.emit('ServerMessege', 'Zahlunsfeld ausgelöst: ');
 					socket.PlayerCash = socket.PlayerCash - 100; //vorest fixxierter Preis!
 					io.sockets.emit('ServerMessege', 'Der Spieler zahlt: $100 an die Bank.');
 					var AnzeigeBenutzer = BenutzerReihenFolgeMax.length;
 					io.sockets.emit('PlayerCashClient', socket.PlayerCash, AnzeigeBenutzer);
 					//kommt dieser betrag zu Freiparken?
-				}else if(KostenMap[FeldPosNumber] == 000){
+				}else if(KostenMap[FeldPosNumber] == 2){
 					io.sockets.emit('ServerMessege', 'Kistenfeld ausgelöst: ');
-				}else if(KostenMap[FeldPosNumber] == 0000){
+				}else if(KostenMap[FeldPosNumber] == 3){
 					io.sockets.emit('ServerMessege', 'Gefängnis ausgelöst: ');
 					//Schicke PlayerPos zu gefägnis.
 					//Rufe die Next Player function auf.
 					//Am anfang eines zuges muss geprüft werden ob sich dieser spieler in jail befindet. bsp if(socket.jail = 1 ... (socket.jail muss exisiteren!
 					//hier kommt noch einiges^^
-				}else if(KostenMap[FeldPosNumber] == 000000){
+				}else if(KostenMap[FeldPosNumber] == 4){
 					io.sockets.emit('ServerMessege', 'Freiparken ausgelöst: ');
 					if(FreiParken > 0){
 						socket.PlayerCash = socket.PlayerCash + FreiParken;
@@ -411,9 +421,11 @@ socket.on('roll', function(){
 						var AnzeigeBenutzer = BenutzerReihenFolgeMax.length;
 						io.sockets.emit('PlayerCashClient', socket.PlayerCash, AnzeigeBenutzer);
 					}
-				}else if(KostenMap[FeldPosNumber] == 00000){
+				}else if(KostenMap[FeldPosNumber] == 5){
 					io.sockets.emit('ServerMessege', 'start ausgelöst: ');
-				} 
+				}else if(KostenMap[FeldPosNumber] == 6){
+					io.sockets.emit('ServerMessege', 'Gefägnis zu BEsuch ausgelöst: ');
+				}  
 				//EVENTS CLOSED OPEN NEXT PLAYER FUNCTION
 				if(socket.paschcounter == 0){
 				NextPlayer(socket);
